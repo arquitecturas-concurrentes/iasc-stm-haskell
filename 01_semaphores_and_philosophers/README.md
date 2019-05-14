@@ -124,3 +124,97 @@ Bien en ese caso si y es menor a x, se generara un efecto de IO y al ser este ef
 
 Perfecto, pero entonces como hacemos para volver a reintentar la operacion?? Utilizando la funcion retry, que tiene la siguiente firma:
 
+```haskell
+retry :: STM a
+```
+
+veamos un ejemplo en el que queremos hacer esto, que es el de semaforos:
+
+```haskell
+type Semaphore = TVar Bool
+
+newSem :: Bool -> IO Semaphore
+newSem aval = newTVarIO aval
+
+p :: Semaphore -> STM()
+p sem = do
+    b <- readTVar sem
+    if b
+        then writeTVar sem False
+        else retry
+
+v :: Semaphore -> STM()
+v sem = writeTVar sem True
+```
+
+cada vez que nosotros queremos chequear con el flag si se puede entrar o no en la condicion, vamos a tener que ver si el flag esta seteado en false, que significa que el recurso que maneja el semaforo esta siendo usado. Si este valor esta en false, deberia abortarse la operacon y solo cuando se termine se seteara en True, si bien despues podemos agregar el atomically, esto siempre es en funcion de como se usa.
+
+Podemos incluso cambiar esto como una funcion check que si dado una condicion nos da falso, deberiamos abortar la operacion, extrayendo esto en una funcion podemos dejar esto como
+
+```haskell
+check :: Bool -> STM ()
+check True  = return ()
+check False = retry
+```
+
+ahora esto lo podemos usar en alguna condicion que en el caso de que falle el booleano nos haga la re ejecucion del bloque
+
+```haskell
+type Resource = TVar Int
+
+check :: Bool -> STM ()
+check True  = return ()
+check False = retry
+
+acquire :: Resource - Int - STM ()
+acquire res nr = do n <- readTVar res
+                    check ( nr >= n )
+                    writeTVar res (n - nr)
+                            
+release :: Resource - Int - STM ()
+release res nr = do n <- readTVar res
+                    writeTVar res (n + nr)
+```
+
+El ultimo caso es el del `orElse`, donde es un caso en el cual si uno de los valores es nulo o no puede cumplirse, optara por el camino que puede tomar como segundo parametro, la firma es la siguiente:
+
+```haskell
+orElse :: STM a -> STM a -> STM a
+```
+
+Como funcionaria esta funcion? Bueno es como un combinador, tiene dos acciones de STM, si la primera falla, o sea recibe un retry, no sigue intentando y en su lugar opta por la segunda accion y retorna esta si no falla.
+
+Veamos un ejemplo bien simple de esto.
+
+```haskell
+someFailingOp :: TVar a -> STM ()
+someFailingOp a =
+    v <- readTVar a
+    if v < 49494949
+        then retry
+        else return ()
+
+successOp :: TVar a -> STM()
+successOp a =
+    v <- readTVar a
+    if v > 0
+        then writeTVar a 33723
+        else retry
+
+anElseOperation :: TVar a -> TVar a -> STM () 
+anElseOperation a b =
+    OrElse (someFailingOp a) (successOp b)
+
+main = do
+    a <- atomically (newTVar 2)
+    b <- atomically (newTVar 1)
+    atomically (anElseOperation a b)
+```
+
+#### Ejercicio de los filosofos que cenan
+
+![filosofos](filosofos.png)
+
+Explicamos TMVar, que es?
+
+
