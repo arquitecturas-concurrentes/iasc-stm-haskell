@@ -5,6 +5,6 @@ import Control.Concurrent
 
 main :: IO ()
 main = do 
-    forkIO (hPutStr stdout "Hola")
+    tid <- forkIO (hPutStr stdout "Hola")
     hPutStr stdout " mundo\n"
 
