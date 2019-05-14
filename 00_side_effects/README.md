@@ -135,3 +135,6 @@ main = do
 Ahora bien al forkear el thread, el segundo se va a ejecutar y como ambos ejecutan `hPutStr stdout`, ahora es solo no deterministico cual de las dos sentencias se va a ejecutar primero, o sea cual de las dos "ganaria" por ejecutarse primero, y lo mas importante, si necesitaramos que primero se ejecute uno y despues la otra sentencia porque nos importa el orden, esto no podriamos ya garantizarlo. Por otro lado si esto fuese una variable y no un handle de I/O, podriamos estar pisando un valor mutable, modelado con `IORef`, en un thread mientras que en otro se este utilizando, por lo que ya no estariamos garantizando la atomicidad de mas de una operacion!
 
 Para esto entra en juego un mecanismo que nos va a ayudar a manejar el estado concurrente, modelado con variables mutables, entre distintos threads sobre un mismo estado un mecanismo llamado STM.
+
+
+Pueden ver mas informacion de IO [aqui](https://www.haskell.org/tutorial/io.html)
