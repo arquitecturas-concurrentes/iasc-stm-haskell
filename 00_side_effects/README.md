@@ -25,7 +25,7 @@ hPutStr  :: Handle -> String -> IO ()
 hGetLine :: Handle -> IO String
 ```
 
-si bien hay que pasarle un handle, y un string, estariamos devolviendo un `IO ()` y un `IO String`, la diferencua es que un IO string, es como una caja de IO, que nos permite guardar un valor que puede ser mutable y el tipo que contiene en esa caja es del tipo String, cuando se le pasa los parentesis, significa que hay un tipo, pero que seria un tipo generico y que seria similar a modelar algo al estilo `void` de C, es el tipo Unit por si conocen Scala, mas alla de que es un valor.
+si bien hay que pasarle un handle, y un string, estariamos devolviendo un `IO ()` y un `IO String`, la diferencua es que un IO string, es como una caja de IO, que nos permite guardar un valor que puede ser mutable y el tipo que contiene en esa caja es del tipo String, cuando se le pasa los parentesis, significa que hay un tipo, cuyo unico valor es () y que se usa solo para representar que no nos interesa el retorno de la funcion, y esto es porque no hay nada util o necesario que querramos realmente hacer con este valor de retorno, y por eso se usa generalmente para funciones que producen efecto de lado.
 
 Genial ahora sabemos que no hay tanta diferencia entre estos retornos. Podemos generalizar esta firma con algo como `IO a` con un tipo particular, y a esto se le llama en Haskell como `actions`. por lo que al hacer `hPutStr stdout 'hola'`, es una accion que cuando se ejecuta, va a imprimir hola en el handle que es `stdout`.
 
@@ -60,7 +60,7 @@ parece simple, pero y sin la do-notation, como quedaria?
 main readLn >>= (\a -> hPutStr stdout a)
 ```
 
-tanto >> com >>= son el binding operator, la segunda vez o sea el binding agregando el signo de igualdad (=), permite que usemos en la proxima accion el resultado del anterior. Esto se parece bastante a lo que vimos la clase pasada,no? Veamos un ejemplo mas para que no queden dudas
+tanto >> com >>= son el binding operator, y este permite que usemos en la proxima accion el resultado del anterior. Esto se parece bastante a lo que vimos la clase pasada,no? Veamos un ejemplo mas para que no queden dudas
 
 Ahora queremos que de acuerdo a un handle agreguemos un texto antes de leer una linea, o sea un append de una linea antes, para eso arme esta funcion `prepend`
 
