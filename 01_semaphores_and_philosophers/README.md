@@ -17,7 +17,7 @@ Pero que es STM, ademas de memoria transaccional? Es un mecanismo de lock optimi
 
 Software transactional memory (STM) nos da unas herramientas básicas aunque potentes con las cuales podemos solucionar casi todos los problemas ya mencionados. STM ejecuta un bloque de acciones como una transacción usando un combinador llamado atomically, en suma este combinador nos permite convertir una transacción STM en un bloque ejecutable. Una vez que entramos al bloque, otros threads no pueden ver ninguna modificaciones que hagamos hasta que salgamos, y nuestro thread no puede ver ninguno de los cambios hechos por otros threads. Estas dos propiedades hacen que nuestra ejecución sea aislada. Esto nos hace pensar a algo muy similar a un mutex, en el que no se permite a otro thread modificar un estado hasta que lo libere.
 
-![STM y mutex](mutex.png)
+![STM y mutex](https://raw.githubusercontent.com/arquitecturas-concurrentes/iasc-stm-haskell-2019/master/01_semaphores_and_philosophers/mutex.png)
 
 Cuando se sale de una transacción, solo una de las dos siguientes cosas pueden suceder:
 
@@ -213,7 +213,7 @@ main = do
 
 #### Ejercicio de los filosofos que cenan
 
-![filosofos](filosofos.png)
+![filosofos](https://raw.githubusercontent.com/arquitecturas-concurrentes/iasc-stm-haskell-2019/master/01_semaphores_and_philosophers/filosofos.png)
 
 Explicamos TMVar, que es?
 
