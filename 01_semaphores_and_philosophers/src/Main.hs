@@ -3,6 +3,9 @@ module Main where
 import System.IO
 import Control.Concurrent.STM
 
+{- readTVar  :: TVar a -> STM a -}
+{- writeTVar :: TVar a -> a -> STM () -}
+{- atomically :: STM a -> IO a -}
 type Counter = TVar Int
 
 incTVar :: Counter -> STM ()
