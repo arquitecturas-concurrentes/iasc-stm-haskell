@@ -49,7 +49,7 @@ Con la do-notation:
 
 ```haskell
 main = do
-    a <- readLn
+    a <- getLine
     hPutStr stdout a
 ```
 
@@ -57,7 +57,7 @@ parece simple, pero y sin la do-notation, como quedaria?
 
 
 ```haskell
-main readLn >>= (\a -> hPutStr stdout a)
+main getLine >>= (\a -> hPutStr stdout a)
 ```
 
 tanto >> com >>= son el binding operator, y este permite que usemos en la proxima accion el resultado del anterior. Esto se parece bastante a lo que vimos la clase pasada,no? Veamos un ejemplo mas para que no queden dudas
@@ -93,6 +93,7 @@ Y veremos un ejemplo simple que es el de tener un contador... nada muy elaborado
 bien para esto podemos usar un tipo creado o tan solo nuestro contador mutable puede ser un simple `IORef Int` que podremos crear con `newIORef x` donde x es un valor, por lo que lo inicializaremos con un valor entero, despues de eso tan solo usando las funciones que tenemos para escribir y leer un `IORef` de la misma manera que lo haciamos con un `IO`, que son 
 
 ```haskell
+newIORef :: a -> IO (IORef a)
 readIORef :: IORef a -> IO a
 writeIORef :: IORef a -> a -> IO ()
 ```

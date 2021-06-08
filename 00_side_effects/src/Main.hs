@@ -3,6 +3,7 @@ module Main where
 import System.IO
 import Data.IORef
 
+{-:t newIORef :: a -> IO (IORef a) -}
 {-:t readIORef  -> readIORef :: IORef a -> IO a -}
 {-:t writeIORef -> writeIORef :: IORef a -> a -> IO () -}
 incRef :: IORef Int -> IO ()
