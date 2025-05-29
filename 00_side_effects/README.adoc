@@ -1,0 +1,151 @@
+= Efectos de Lado
+
+== Intoduccion
+
+Durante la clase pasada estuvimos viendo monadas y otros conceptos en haskell como functores y aplicativos. Si bien pareceria que la clase pasada presenta a simple vista una cierta desconexion con respecto a concurrencia, esto no es tan asi ya que una monada puede verse como una computacion que puede llegar a cambiar por un estado valido o invalido a lo largo del codigo.
+
+Durante lo que se ha visto hasta ahora en haskell no se ha mencionado nada sobre efecto de lado, y esto es porque se comento seguramente que Haskell es un lenguaje netamente puro, y por ende, sin efecto de lado, esto no es tan asi si se muestra un ejemplo como este en donde se imprime algo por pantalla:
+
+[,haskell]
+----
+import System.IO
+
+main :: IO ()
+main = do
+  hPutStr stdout "Hola mundo!"
+----
+
+Aqui es donde introducimos un cambio en el estado del sistema, y si bien es una impresion por pantalla, algo tan simple como un print por stdout es en si un efecto de lado. Entonces que es lo que consideramos como un efecto de lado?
+
+Un efecto de lado es cualquier cosa que lee o escribe un estado mutable. el I/O es un ejemplo claro de esto, ya que estamos pasandole a un handle que es el stdout, una escritura que en el ejemplo es el `Hola mundo!`
+
+veamos la firma de lo que usamos para imprimir algo por pantalla
+
+[,haskell]
+----
+hPutStr  :: Handle -> String -> IO ()
+hGetLine :: Handle -> IO String
+----
+
+si bien hay que pasarle un handle, y un string, estariamos devolviendo un `IO ()` y un `IO String`, la diferencua es que un IO string, es como una caja de IO, que nos permite guardar un valor que puede ser mutable y el tipo que contiene en esa caja es del tipo String, cuando se le pasa los parentesis, significa que hay un tipo, cuyo unico valor es () y que se usa solo para representar que no nos interesa el retorno de la funcion, y esto es porque no hay nada util o necesario que querramos realmente hacer con este valor de retorno, y por eso se usa generalmente para funciones que producen efecto de lado.
+
+Genial ahora sabemos que no hay tanta diferencia entre estos retornos. Podemos generalizar esta firma con algo como `IO a` con un tipo particular, y a esto se le llama en Haskell como `actions`. por lo que al hacer `hPutStr stdout 'hola'`, es una accion que cuando se ejecuta, va a imprimir hola en el handle que es `stdout`.
+
+Ahora si quisieramos tener mas de una accion, habria que concatenarlas, o sea componerlas, por lo que deberiamos obtener el valor de esta caja que es IO, obtener el valor y utilizarla en la proxima linea por lo que si tenemos que usar el operador `>>` para concatener por ej una seria de hPutStr
+
+[,haskell]
+----
+main = (hPutStr stdout "Hola mundo!") >> (hPutStr stdout "Mi segunda linea")
+----
+
+para simplificarlo vamos a usar la `do` notation:
+
+[,haskell]
+----
+main = do
+    hPutStr stdout "Hola mundo!"
+    hPutStr stdout "Mi segunda linea"
+----
+
+Ahora que pasa si tenemos que leer una linea e imprimirla?
+
+Con la do-notation:
+
+[,haskell]
+----
+main = do
+    a <- getLine
+    hPutStr stdout a
+----
+
+parece simple, pero y sin la do-notation, como quedaria?
+
+[,haskell]
+----
+main getLine >>= (\a -> hPutStr stdout a)
+----
+
+tanto >> com >>= son el binding operator, y este permite que usemos en la proxima accion el resultado del anterior. Esto se parece bastante a lo que vimos la clase pasada,no? Veamos un ejemplo mas para que no queden dudas
+
+Ahora queremos que de acuerdo a un handle agreguemos un texto antes de leer una linea, o sea un append de una linea antes, para eso arme esta funcion `prepend`
+
+[,haskell]
+----
+preprend :: Handle -> IO String
+prepend h =
+    s <- hGetLine h
+    hPutStr h ("Linea de prepend antes de la linea leida del handle.")
+    return s
+----
+
+Esto se puede ver en el ejemplo de `SimpleIO.hs` y lo que hace es agregar al handle esa linea antes de devolver la linea leida al control. Pareceria muy normal ver ese return ahi, pero en realidad la firma es IO String, por lo que la firma se estaria cumpliendo. Lo que pareceria algo que es del lenguaje, en realidad es una funcion mas, y esta es su firma
+
+[,haskell]
+----
+return :: a -> IO a
+----
+
+Entonces esta caja IO, puede usar return y binding.... Todo pareceria indicar que es en realidad una monada.
+
+Si esto les parece bastante raro pueden ver o preguntarnos sobre que es una monada o ver el material de la clase anterior. En otro caso continuemos.
+
+Sobre el efecto de lado, no solamente lo vamos a tener del lado de I/O, a veces queremos por x razones tener una variable mutable, y hasta ahora no podiamos tenerlo en haskell, que podemos hacer ahora que sabemos que IO nos permite encapsular algo que contiene un valor que puede ser modificado con efecto de lado?
+
+En este caso seria extenderlo...
+
+Por eso estaremos usando lo que nos permite manejar una referencia a algo mutable que es `IORef`
+
+Y veremos un ejemplo simple que es el de tener un contador... nada muy elaborado, pero es nuestro ejemplo mas simple que ya vimos y que nos permitira explicar bien que es un IORef ademas de una monada.
+
+bien para esto podemos usar un tipo creado o tan solo nuestro contador mutable puede ser un simple `IORef Int` que podremos crear con `newIORef x` donde x es un valor, por lo que lo inicializaremos con un valor entero, despues de eso tan solo usando las funciones que tenemos para escribir y leer un `IORef` de la misma manera que lo haciamos con un `IO`, que son
+
+[,haskell]
+----
+newIORef :: a -> IO (IORef a)
+readIORef :: IORef a -> IO a
+writeIORef :: IORef a -> a -> IO ()
+----
+
+vamos a poder ahora modelar nuestra funcion que nos de el sucesor de nuestro contador
+
+[,haskell]
+----
+incRef :: IORef Int -> IO ()
+incRef var = do
+    val <- readIORef var
+    writeIORef var (val+1)
+----
+
+Interesante. Ahora siempre que usemos esta funcion, pasandole un IORef que contenga un Int, va a extraer el valor, y de ahi escribir este IORef con el valor incrementado en 1
+
+Lo ultimo para mencionar es que IORef nos permite modelar ahora variables mutables, y puede verse como un puntero a una posicion de memoria mutable.
+
+Sigamos... Veamos algo de concurrencia ahora..
+
+=== Introduccion a la concurrencia con Fork
+
+Vamos a utilizar la funcion `forkIO` que tiene la siguiente firma
+
+[,haskell]
+----
+ forkIO :: IO a -> IO ThreadId
+----
+
+que nos va a permitir forkear el thread actual en uno nuevo y que se ejecuten varias cosas de manera concurrente. veamos un ejemplo simple en `fork.hs`
+
+[,haskell]
+----
+import System.IO
+import Control.Concurrent
+
+main :: IO ()
+main = do
+    forkIO (hPutStr stdout "Hola")
+    hPutStr stdout " mundo\n"
+----
+
+Ahora bien al forkear el thread, el segundo se va a ejecutar y como ambos ejecutan `hPutStr stdout`, ahora es solo no deterministico cual de las dos sentencias se va a ejecutar primero, o sea cual de las dos "ganaria" por ejecutarse primero, y lo mas importante, si necesitaramos que primero se ejecute uno y despues la otra sentencia porque nos importa el orden, esto no podriamos ya garantizarlo. Por otro lado si esto fuese una variable y no un handle de I/O, podriamos estar pisando un valor mutable, modelado con `IORef`, en un thread mientras que en otro se este utilizando, por lo que ya no estariamos garantizando la atomicidad de mas de una operacion!
+
+Para esto entra en juego un mecanismo que nos va a ayudar a manejar el estado concurrente, modelado con variables mutables, entre distintos threads sobre un mismo estado un mecanismo llamado STM.
+
+Pueden ver mas informacion de IO https://www.haskell.org/tutorial/io.html[aqui]
